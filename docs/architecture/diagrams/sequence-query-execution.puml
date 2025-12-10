@@ -1,0 +1,165 @@
+@startuml sequence-query-execution
+!pragma teoz true
+
+title WordPress WP_Query Execution Flow
+
+participant "Theme/Plugin" as caller
+participant "WP_Query" as query
+participant "WP_Tax_Query" as tax
+participant "WP_Meta_Query" as meta
+participant "WP_Date_Query" as date
+participant "wpdb" as db
+
+caller -> query: new WP_Query($args)
+activate query
+
+query -> query: init()
+note over query
+    Reset all properties
+    to default values
+end note
+
+query -> query: parse_query($args)
+activate query
+
+note over query
+    Parse Arguments:
+    - post_type
+    - post_status
+    - posts_per_page
+    - orderby, order
+    - tax_query
+    - meta_query
+    - date_query
+    - author, s, etc.
+end note
+
+alt Has tax_query argument
+    query -> tax: new WP_Tax_Query($tax_query)
+    activate tax
+    tax --> query: WP_Tax_Query object
+    deactivate tax
+end
+
+alt Has meta_query argument
+    query -> meta: new WP_Meta_Query($meta_query)
+    activate meta
+    meta --> query: WP_Meta_Query object
+    deactivate meta
+end
+
+alt Has date_query argument
+    query -> date: new WP_Date_Query($date_query)
+    activate date
+    date --> query: WP_Date_Query object
+    deactivate date
+end
+
+query -> query: Set is_* flags
+note over query
+    Determine query type:
+    is_single, is_page,
+    is_archive, is_search,
+    is_home, is_front_page, etc.
+end note
+
+deactivate query
+
+query -> query: get_posts()
+activate query
+
+note over query
+    Build SQL Query:
+    SELECT {fields}
+    FROM {posts table}
+end note
+
+query -> query: get_posts_fields()
+query -> query: get_posts_join()
+
+alt Has tax_query
+    query -> tax: get_sql($table, $id_column)
+    activate tax
+    tax --> query: JOIN + WHERE clauses
+    deactivate tax
+end
+
+alt Has meta_query
+    query -> meta: get_sql($type, $table, $id_column)
+    activate meta
+    meta --> query: JOIN + WHERE clauses
+    deactivate meta
+end
+
+alt Has date_query
+    query -> date: get_sql()
+    activate date
+    date --> query: WHERE clause
+    deactivate date
+end
+
+query -> query: get_posts_where()
+query -> query: get_posts_groupby()
+query -> query: get_posts_orderby()
+query -> query: get_posts_limits()
+
+note over query
+    Apply filters:
+    'posts_fields'
+    'posts_join'
+    'posts_where'
+    'posts_groupby'
+    'posts_orderby'
+    'posts_limits'
+    'posts_clauses'
+    'posts_request'
+end note
+
+query -> db: get_results($sql)
+activate db
+db -> db: Execute SQL
+db --> query: array of post objects
+deactivate db
+
+query -> query: Convert to WP_Post objects
+
+note over query
+    Post-processing:
+    - Apply 'the_posts' filter
+    - Set found_posts
+    - Set max_num_pages
+    - Cache posts
+end note
+
+query -> query: setup_postdata($first_post)
+
+deactivate query
+deactivate query
+
+caller -> query: have_posts()
+activate query
+query --> caller: bool
+deactivate query
+
+loop The Loop
+    caller -> query: the_post()
+    activate query
+    query -> query: $current_post++
+    query -> query: setup_postdata($post)
+    note over query
+        Set globals:
+        $post, $id,
+        $authordata, etc.
+    end note
+    query --> caller: 
+    deactivate query
+    
+    caller -> caller: Display post content
+end
+
+caller -> query: wp_reset_postdata()
+activate query
+query -> query: Restore global $post
+deactivate query
+
+@enduml

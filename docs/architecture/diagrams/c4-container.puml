@@ -1,0 +1,40 @@
+@startuml c4-container
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title WordPress Container Diagram
+
+Person(user, "User", "Visitor, Author, or Admin")
+
+System_Boundary(wordpress, "WordPress") {
+    Container(frontend, "Frontend", "PHP/HTML/CSS/JS", "Renders public-facing website content using themes")
+    Container(admin, "Admin Panel", "PHP/React/JS", "Content management and site administration interface")
+    Container(rest_api, "REST API", "PHP/JSON", "Programmatic access to WordPress data and functionality")
+    Container(cron, "WP-Cron", "PHP", "Scheduled task execution system")
+    Container(cli, "WP-CLI", "PHP", "Command-line interface for WordPress management")
+}
+
+ContainerDb(database, "Database", "MySQL/MariaDB", "Stores posts, users, options, metadata")
+Container_Ext(cache, "Object Cache", "Redis/Memcached", "Optional caching layer")
+Container_Ext(filesystem, "File System", "Local/S3", "Media uploads and static files")
+
+Rel(user, frontend, "Views content", "HTTPS")
+Rel(user, admin, "Manages content", "HTTPS")
+Rel(user, rest_api, "API calls", "HTTPS/JSON")
+Rel(user, cli, "CLI commands", "SSH")
+
+Rel(frontend, database, "Reads content", "SQL")
+Rel(admin, database, "CRUD operations", "SQL")
+Rel(rest_api, database, "CRUD operations", "SQL")
+Rel(cron, database, "Scheduled tasks", "SQL")
+Rel(cli, database, "Management ops", "SQL")
+
+Rel(frontend, cache, "Caches queries", "TCP")
+Rel(admin, cache, "Caches data", "TCP")
+Rel(rest_api, cache, "Caches responses", "TCP")
+
+Rel(admin, filesystem, "Uploads media", "Local/S3")
+Rel(frontend, filesystem, "Serves media", "Local/S3")
+
+@enduml

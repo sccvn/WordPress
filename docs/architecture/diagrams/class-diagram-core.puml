@@ -1,0 +1,254 @@
+@startuml class-diagram-core
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+
+title WordPress Core Class Diagram
+
+package "Core Request Handling" {
+    class WP {
+        +array $public_query_vars
+        +array $private_query_vars
+        +array $query_vars
+        +string $query_string
+        +string $request
+        +string $matched_rule
+        +string $matched_query
+        +bool $did_permalink
+        --
+        +init()
+        +parse_request(array $extra_query_vars)
+        +send_headers()
+        +build_query_string()
+        +query_posts()
+        +handle_404()
+        +register_globals()
+        +main(string $query_args)
+    }
+}
+
+package "Query System" {
+    class WP_Query {
+        +string $query
+        +array $query_vars
+        +WP_Tax_Query $tax_query
+        +WP_Meta_Query $meta_query
+        +WP_Date_Query $date_query
+        +array $posts
+        +int $post_count
+        +int $found_posts
+        +int $max_num_pages
+        +int $current_post
+        +WP_Post $post
+        +bool $is_single
+        +bool $is_archive
+        +bool $is_page
+        ...
+        --
+        +__construct(string|array $query)
+        +init()
+        +parse_query(string|array $query)
+        +parse_query_vars()
+        +set(string $query_var, mixed $value)
+        +get(string $query_var): mixed
+        +get_posts(): WP_Post[]
+        +have_posts(): bool
+        +the_post()
+        +rewind_posts()
+        +setup_postdata(WP_Post $post): bool
+        +reset_postdata()
+        +is_main_query(): bool
+    }
+
+    class WP_Tax_Query {
+        +array $queries
+        +string $relation
+        --
+        +__construct(array $tax_query)
+        +get_sql(string $primary_table, string $primary_id_column): array
+        +transform_query(array &$query, string $resulting_field)
+    }
+
+    class WP_Meta_Query {
+        +array $queries
+        +string $relation
+        +WP_Meta_Query[] $table_aliases
+        --
+        +__construct(array $meta_query)
+        +get_sql(string $type, string $primary_table, string $primary_id_column, object $context): array
+        +get_clauses(): array
+    }
+
+    class WP_Date_Query {
+        +array $queries
+        +string $column
+        --
+        +__construct(array $date_query, string $default_column)
+        +get_sql(): string
+        +validate_column(string $column): string
+    }
+}
+
+package "Database" {
+    class wpdb {
+        +bool $show_errors
+        +int $num_queries
+        +string $last_query
+        +array $last_result
+        +int $rows_affected
+        +int $insert_id
+        +string $prefix
+        +string $base_prefix
+        +string $posts
+        +string $users
+        +string $usermeta
+        +string $comments
+        +string $options
+        +string $terms
+        ...
+        --
+        +__construct(string $dbuser, string $dbpassword, string $dbname, string $dbhost)
+        +query(string $query): int|bool
+        +prepare(string $query, mixed ...$args): string|null
+        +get_var(string $query, int $x, int $y): string|null
+        +get_row(string $query, string $output, int $y): array|object|null
+        +get_col(string $query, int $x): array
+        +get_results(string $query, string $output): array|object|null
+        +insert(string $table, array $data, array|string $format): int|false
+        +update(string $table, array $data, array $where, array|string $format, array|string $where_format): int|false
+        +delete(string $table, array $where, array|string $where_format): int|false
+        +replace(string $table, array $data, array|string $format): int|false
+        +esc_like(string $text): string
+    }
+}
+
+package "Hook System" {
+    class WP_Hook {
+        +array $callbacks
+        -array $priorities
+        +array $iterations
+        +int $nesting_level
+        +bool $doing_action
+        --
+        +add_filter(string $hook_name, callable $callback, int $priority, int $accepted_args)
+        +remove_filter(string $hook_name, callable $callback, int $priority): bool
+        +has_filter(string $hook_name, callable|false $callback): bool|int
+        +apply_filters(mixed $value, array $args): mixed
+        +do_action(array $args)
+        +do_action_ref_array(array $args)
+        +current_priority(): int|false
+        -resort_active_iterations()
+    }
+
+    interface Iterator
+    interface ArrayAccess
+
+    WP_Hook ..|> Iterator
+    WP_Hook ..|> ArrayAccess
+}
+
+package "Content Entities" {
+    class WP_Post {
+        +int $ID
+        +int $post_author
+        +string $post_date
+        +string $post_date_gmt
+        +string $post_content
+        +string $post_title
+        +string $post_excerpt
+        +string $post_status
+        +string $post_type
+        +string $post_name
+        +int $post_parent
+        +string $guid
+        +int $menu_order
+        +string $post_mime_type
+        +int $comment_count
+        --
+        +__construct(WP_Post|object $post)
+        +__isset(string $key): bool
+        +__get(string $key): mixed
+        +filter(string $filter): self|array|bool|object|WP_Post
+        +to_array(): array
+        {static} +get_instance(int $post_id): WP_Post|false
+    }
+
+    class WP_User {
+        +int $ID
+        +object $data
+        +string $caps
+        +array $cap_key
+        +array $roles
+        +array $allcaps
+        --
+        +__construct(int|string|stdClass|WP_User $id, string $name, int $site_id)
+        +__get(string $key): mixed
+        +__set(string $key, mixed $value)
+        +exists(): bool
+        +get(string $key): mixed
+        +has_cap(string $cap, mixed ...$args): bool
+        +add_cap(string $cap, bool $grant)
+        +remove_cap(string $cap)
+        +add_role(string $role)
+        +remove_role(string $role)
+        +set_role(string $role)
+        +get_role_caps(): array
+    }
+
+    class WP_Term {
+        +int $term_id
+        +string $name
+        +string $slug
+        +int $term_group
+        +int $term_taxonomy_id
+        +string $taxonomy
+        +string $description
+        +int $parent
+        +int $count
+        --
+        +__construct(WP_Term|object $term)
+        +to_array(): array
+        +__get(string $key): mixed
+        {static} +get_instance(int $term_id, string $taxonomy): WP_Term|WP_Error|false
+    }
+
+    class WP_Comment {
+        +int $comment_ID
+        +int $comment_post_ID
+        +string $comment_author
+        +string $comment_author_email
+        +string $comment_author_url
+        +string $comment_author_IP
+        +string $comment_date
+        +string $comment_date_gmt
+        +string $comment_content
+        +int $comment_karma
+        +string $comment_approved
+        +string $comment_agent
+        +string $comment_type
+        +int $comment_parent
+        +int $user_id
+        --
+        +__construct(WP_Comment|object $comment)
+        +to_array(): array
+        +get_children(array $args): WP_Comment[]
+        {static} +get_instance(int $id): WP_Comment|false
+    }
+}
+
+' Relationships
+WP --> WP_Query : uses
+WP --> "1" wpdb : uses (global)
+WP_Query --> WP_Tax_Query : uses
+WP_Query --> WP_Meta_Query : uses
+WP_Query --> WP_Date_Query : uses
+WP_Query --> wpdb : queries via
+WP_Query --> "0..*" WP_Post : returns
+WP_User --> WP_Post : author of
+WP_Comment --> WP_Post : belongs to
+WP_Term --> WP_Post : categorizes
+
+note right of WP_Hook : Global $wp_filter stores\nall registered hooks as\nWP_Hook instances
+
+note bottom of wpdb : Global $wpdb instance\nprovides database access\nthroughout WordPress
+
+@enduml

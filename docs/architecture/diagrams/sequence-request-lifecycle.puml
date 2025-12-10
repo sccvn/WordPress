@@ -1,0 +1,116 @@
+@startuml sequence-request-lifecycle
+!pragma teoz true
+
+title WordPress Frontend Request Lifecycle
+
+participant "Browser" as browser
+participant "index.php" as index
+participant "wp-blog-header.php" as header
+participant "wp-load.php" as load
+participant "wp-config.php" as config
+participant "wp-settings.php" as settings
+participant "WP" as wp
+participant "WP_Query" as query
+participant "wpdb" as db
+participant "template-loader.php" as template
+
+browser -> index: HTTP Request
+
+activate index
+index -> header: require_once()
+activate header
+
+header -> load: require_once()
+activate load
+
+load -> config: require_once()
+activate config
+
+config -> settings: require_once()
+activate settings
+
+note over settings
+    Bootstrap Sequence:
+    1. Load version.php
+    2. Load load.php
+    3. Initialize constants
+    4. Load plugin.php (hooks)
+    5. Initialize $wpdb
+    6. Load core classes
+    7. Load plugins
+    8. Load theme
+    9. Fire 'init' action
+    10. Fire 'wp_loaded' action
+end note
+
+settings --> config: WordPress loaded
+deactivate settings
+
+config --> load: 
+deactivate config
+
+load --> header:
+deactivate load
+
+header -> wp: wp()
+activate wp
+
+wp -> wp: init()
+wp -> wp: parse_request()
+
+note over wp
+    parse_request():
+    - Parse URL path
+    - Match against rewrite rules
+    - Set query_vars
+end note
+
+wp -> wp: send_headers()
+wp -> wp: query_posts()
+
+wp -> query: new WP_Query($query_string)
+activate query
+
+query -> query: parse_query()
+query -> db: get_posts()
+activate db
+db --> query: posts array
+deactivate db
+
+query -> query: setup_postdata()
+query --> wp: WP_Query object
+deactivate query
+
+wp -> wp: handle_404()
+wp -> wp: register_globals()
+
+wp --> header: 
+deactivate wp
+
+header -> template: require_once()
+activate template
+
+note over template
+    Template Selection:
+    1. Check template_redirect action
+    2. Determine template type
+    3. Use template hierarchy
+    4. Load appropriate template
+end note
+
+template -> query: have_posts()
+loop The Loop
+    template -> query: the_post()
+    template -> template: Render content
+end
+
+template --> header: HTML output
+deactivate template
+
+header --> index: 
+deactivate header
+
+index --> browser: HTTP Response
+deactivate index
+
+@enduml

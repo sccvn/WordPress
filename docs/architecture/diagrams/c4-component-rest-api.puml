@@ -1,0 +1,52 @@
+@startuml c4-component-rest-api
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title WordPress REST API Components
+
+Container_Boundary(rest_api, "REST API Container") {
+    Component(rest_server, "WP_REST_Server", "PHP Class", "Route registration, request dispatch, authentication")
+    Component(rest_request, "WP_REST_Request", "PHP Class", "Request parsing, parameter validation")
+    Component(rest_response, "WP_REST_Response", "PHP Class", "Response building, status codes, headers")
+    Component(rest_controller, "WP_REST_Controller", "PHP Abstract Class", "Base controller with common methods")
+}
+
+Container_Boundary(endpoints, "Endpoint Controllers") {
+    Component(posts_controller, "WP_REST_Posts_Controller", "PHP Class", "/wp/v2/posts, /wp/v2/pages")
+    Component(users_controller, "WP_REST_Users_Controller", "PHP Class", "/wp/v2/users")
+    Component(comments_controller, "WP_REST_Comments_Controller", "PHP Class", "/wp/v2/comments")
+    Component(terms_controller, "WP_REST_Terms_Controller", "PHP Class", "/wp/v2/categories, /wp/v2/tags")
+    Component(blocks_controller, "WP_REST_Blocks_Controller", "PHP Class", "/wp/v2/blocks")
+    Component(settings_controller, "WP_REST_Settings_Controller", "PHP Class", "/wp/v2/settings")
+    Component(themes_controller, "WP_REST_Themes_Controller", "PHP Class", "/wp/v2/themes")
+    Component(plugins_controller, "WP_REST_Plugins_Controller", "PHP Class", "/wp/v2/plugins")
+}
+
+Container_Boundary(utilities, "REST Utilities") {
+    Component(search_handler, "WP_REST_Search_Handler", "PHP Class", "Search functionality")
+    Component(field, "WP_REST_Meta_Fields", "PHP Class", "Meta field registration")
+}
+
+Person(client, "API Client")
+
+Rel(client, rest_server, "HTTP Request", "JSON")
+Rel(rest_server, rest_request, "Creates")
+Rel(rest_server, rest_response, "Returns")
+
+Rel(rest_server, posts_controller, "Dispatches to")
+Rel(rest_server, users_controller, "Dispatches to")
+Rel(rest_server, comments_controller, "Dispatches to")
+Rel(rest_server, terms_controller, "Dispatches to")
+Rel(rest_server, blocks_controller, "Dispatches to")
+
+Rel(posts_controller, rest_controller, "Extends")
+Rel(users_controller, rest_controller, "Extends")
+Rel(comments_controller, rest_controller, "Extends")
+Rel(terms_controller, rest_controller, "Extends")
+Rel(blocks_controller, rest_controller, "Extends")
+
+Rel(posts_controller, search_handler, "Uses")
+Rel(posts_controller, field, "Uses")
+
+@enduml

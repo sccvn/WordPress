@@ -1,0 +1,123 @@
+@startuml sequence-rest-api
+!pragma teoz true
+
+title WordPress REST API Request Flow
+
+participant "Client" as client
+participant "WP_REST_Server" as server
+participant "WP_REST_Request" as request
+participant "WP_REST_Controller" as controller
+participant "wpdb" as db
+participant "WP_REST_Response" as response
+
+client -> server: HTTP Request (e.g., GET /wp-json/wp/v2/posts)
+activate server
+
+note over server
+    serve_request($path)
+    Entry point for all REST requests
+end note
+
+server -> server: check_authentication()
+
+alt Authentication Failed
+    server --> client: 401 Unauthorized
+else Authentication Success or Not Required
+
+    server -> request: new WP_REST_Request($method, $path)
+    activate request
+    
+    request -> request: set_headers()
+    request -> request: set_body()
+    request -> request: set_query_params()
+    
+    note over request
+        Parse and store:
+        - URL parameters
+        - Query string params
+        - Body params (JSON/form)
+        - HTTP headers
+    end note
+    
+    request --> server: WP_REST_Request
+    deactivate request
+    
+    server -> server: match_request_to_handler()
+    
+    note over server
+        Route Matching:
+        1. Iterate registered routes
+        2. Match URL pattern
+        3. Extract URL parameters
+        4. Find handler callback
+    end note
+    
+    server -> request: sanitize_params()
+    activate request
+    request -> request: Validate against schema
+    
+    alt Validation Failed
+        request --> server: WP_Error
+        server --> client: 400 Bad Request
+    else Validation Success
+        request --> server: true
+        deactivate request
+        
+        server -> controller: permission_callback($request)
+        activate controller
+        
+        alt Permission Denied
+            controller --> server: false or WP_Error
+            deactivate controller
+            server --> client: 403 Forbidden
+        else Permission Granted
+            controller --> server: true
+            
+            server -> controller: callback($request)
+            
+            note over controller
+                Execute endpoint logic:
+                - get_items() for collections
+                - get_item() for single item
+                - create_item() for POST
+                - update_item() for PUT/PATCH
+                - delete_item() for DELETE
+            end note
+            
+            controller -> db: Query/modify data
+            activate db
+            db --> controller: Data
+            deactivate db
+            
+            controller -> controller: prepare_item_for_response()
+            
+            controller -> response: new WP_REST_Response($data, $status)
+            activate response
+            
+            response -> response: add_links()
+            
+            note over response
+                HATEOAS Links:
+                - self
+                - collection
+                - related resources
+            end note
+            
+            response --> controller: WP_REST_Response
+            deactivate response
+            
+            controller --> server: WP_REST_Response
+            deactivate controller
+            
+            server -> server: envelope_response() if ?_envelope
+            server -> server: response_to_data()
+            server -> server: json_encode()
+            
+            server --> client: JSON Response
+        end
+    end
+end
+
+deactivate server
+
+@enduml

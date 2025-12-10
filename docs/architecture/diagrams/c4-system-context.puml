@@ -1,0 +1,32 @@
+@startuml c4-system-context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title WordPress System Context Diagram
+
+Person(visitor, "Visitor", "Anonymous site visitor")
+Person(author, "Content Author", "Creates and manages content")
+Person(admin, "Administrator", "Manages site configuration")
+Person(developer, "Developer", "Builds themes and plugins")
+
+System(wordpress, "WordPress", "Content Management System - PHP-based web application for creating and managing websites")
+
+System_Ext(mysql, "MySQL/MariaDB", "Database server for persistent storage")
+System_Ext(mail, "Mail Server", "SMTP server for email notifications")
+System_Ext(cdn, "CDN", "Content delivery network for static assets")
+System_Ext(updates, "WordPress.org", "Plugin/theme repository and update service")
+System_Ext(external_api, "External APIs", "Third-party services (social media, payment gateways)")
+
+Rel(visitor, wordpress, "Views content, submits forms", "HTTPS")
+Rel(author, wordpress, "Creates/edits content", "HTTPS")
+Rel(admin, wordpress, "Configures site", "HTTPS")
+Rel(developer, wordpress, "Deploys code", "FTP/SSH")
+
+Rel(wordpress, mysql, "Reads/writes data", "MySQL Protocol")
+Rel(wordpress, mail, "Sends emails", "SMTP")
+Rel(wordpress, cdn, "Serves static files", "HTTPS")
+Rel(wordpress, updates, "Checks updates, downloads packages", "HTTPS")
+Rel(wordpress, external_api, "Integrates services", "HTTPS/REST")
+
+@enduml

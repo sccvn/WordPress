@@ -1,0 +1,138 @@
+@startuml class-diagram-hook-system
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+
+title WordPress Hook System Class Diagram
+
+package "Hook System" {
+    class WP_Hook {
+        +array $callbacks
+        -array $priorities
+        +array $iterations
+        +int $nesting_level
+        +bool $doing_action
+        --
+        +add_filter(string $hook_name, callable $callback, int $priority, int $accepted_args)
+        +remove_filter(string $hook_name, callable $callback, int $priority): bool
+        +has_filter(string $hook_name, callable|false $callback): bool|int
+        +has_filters(): bool
+        +remove_all_filters(int|false $priority)
+        +apply_filters(mixed $value, array $args): mixed
+        +do_action(array $args)
+        +do_action_ref_array(array $args)
+        +current_priority(): int|false
+        -resort_active_iterations()
+        ..Iterator Methods..
+        +rewind()
+        +current(): array|false
+        +key(): int|null
+        +next()
+        +valid(): bool
+        ..ArrayAccess Methods..
+        +offsetExists($offset): bool
+        +offsetGet($offset): mixed
+        +offsetSet($offset, $value)
+        +offsetUnset($offset)
+    }
+
+    interface Iterator {
+        +rewind()
+        +current()
+        +key()
+        +next()
+        +valid()
+    }
+
+    interface ArrayAccess {
+        +offsetExists($offset)
+        +offsetGet($offset)
+        +offsetSet($offset, $value)
+        +offsetUnset($offset)
+    }
+
+    WP_Hook ..|> Iterator
+    WP_Hook ..|> ArrayAccess
+}
+
+package "Global Hook Storage" <<Database>> {
+    object "$wp_filter" as wp_filter {
+        ['hook_name'] = WP_Hook instance
+        ['another_hook'] = WP_Hook instance
+        ...
+    }
+
+    object "$wp_actions" as wp_actions {
+        ['hook_name'] = execution count
+        ['init'] = 1
+        ['wp_loaded'] = 1
+        ...
+    }
+
+    object "$wp_current_filter" as wp_current_filter {
+        Stack of currently executing hooks
+    }
+}
+
+package "Hook API Functions" <<Frame>> {
+    note as api_functions
+        **Filter API:**
+        add_filter($hook, $callback, $priority, $args)
+        remove_filter($hook, $callback, $priority)
+        remove_all_filters($hook, $priority)
+        has_filter($hook, $callback)
+        apply_filters($hook, $value, ...$args)
+        apply_filters_ref_array($hook, $args)
+        
+        **Action API:**
+        add_action($hook, $callback, $priority, $args)
+        remove_action($hook, $callback, $priority)
+        remove_all_actions($hook, $priority)
+        has_action($hook, $callback)
+        do_action($hook, ...$args)
+        do_action_ref_array($hook, $args)
+        did_action($hook)
+        
+        **Utility:**
+        current_filter()
+        current_action()
+        doing_filter($hook)
+        doing_action($hook)
+    end note
+}
+
+package "Callback Structure" <<Frame>> {
+    note as callback_structure
+        **Callback Array Structure:**
+        $callbacks[priority][unique_id] = [
+            'function' => callable,
+            'accepted_args' => int
+        ]
+        
+        **Unique ID Generation:**
+        For functions: function_name
+        For arrays: class_hash + method_name
+        For closures: spl_object_hash
+    end note
+}
+
+package "Priority System" <<Frame>> {
+    note as priority_note
+        **Priority Levels:**
+        1-9: Very early execution
+        10: Default priority (most hooks)
+        11-99: Later execution
+        100+: Very late execution
+        
+        **Execution Order:**
+        Lower number = Earlier execution
+        Same priority = Registration order
+    end note
+}
+
+' Relationships
+WP_Hook --> wp_filter : stored in
+api_functions --> WP_Hook : uses
+api_functions --> wp_actions : tracks
+api_functions --> wp_current_filter : maintains
+
+@enduml

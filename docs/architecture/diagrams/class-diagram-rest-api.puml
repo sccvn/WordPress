@@ -1,0 +1,199 @@
+@startuml class-diagram-rest-api
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+
+title WordPress REST API Class Diagram
+
+package "REST API Core" {
+    class WP_REST_Server {
+        {static} +string READABLE = "GET"
+        {static} +string CREATABLE = "POST"
+        {static} +string EDITABLE = "POST, PUT, PATCH"
+        {static} +string DELETABLE = "DELETE"
+        {static} +string ALLMETHODS = "GET, POST, PUT, PATCH, DELETE"
+        --
+        -array $endpoints
+        -array $route_options
+        +array $namespaces
+        --
+        +__construct()
+        +register_route(string $route_namespace, string $route, array $route_args, bool $override)
+        +unregister_route(string $route_namespace, string $route)
+        +get_routes(string $namespace): array
+        +get_namespaces(): array
+        +serve_request(string $path): null|false
+        +dispatch(WP_REST_Request $request): WP_REST_Response
+        +check_authentication(): WP_Error|null|true
+        +get_index(WP_REST_Request $request): WP_REST_Response
+        +envelope_response(WP_REST_Response $response, bool $embed): WP_REST_Response
+        +response_to_data(WP_REST_Response $response, bool $embed): array
+        +json_error(WP_Error $error): string
+    }
+
+    class WP_REST_Request {
+        -string $method
+        -array $params
+        -array $headers
+        -string $body
+        -array $parsed_body
+        -array $parsed_json
+        -string $route
+        -array $attributes
+        -bool $parsed_body_decoded
+        --
+        +__construct(string $method, string $route, array $attributes)
+        +get_method(): string
+        +set_method(string $method)
+        +get_headers(): array
+        +get_header(string $key): string|null
+        +set_header(string $key, string $value)
+        +get_body(): string
+        +set_body(string $data)
+        +get_body_params(): array
+        +get_query_params(): array
+        +get_json_params(): array
+        +get_param(string $key): mixed
+        +set_param(string $key, mixed $value)
+        +get_params(): array
+        +get_url_params(): array
+        +get_route(): string
+        +set_route(string $route)
+        +get_attributes(): array
+        +set_attributes(array $attributes)
+        +sanitize_params(): true|WP_Error
+        +has_valid_params(): true|WP_Error
+    }
+
+    class WP_REST_Response {
+        -array $links
+        -array $matched_route
+        -array $matched_handler
+        --
+        +__construct(mixed $data, int $status, array $headers)
+        +add_link(string $rel, string $href, array $attributes)
+        +add_links(array $links)
+        +remove_link(string $rel, string $href)
+        +get_links(): array
+        +set_matched_route(string $route)
+        +get_matched_route(): string
+        +set_matched_handler(array $handler)
+        +get_matched_handler(): array|null
+        +get_curies(): array
+        +as_error(): WP_Error|null
+    }
+
+    abstract class WP_REST_Controller {
+        #string $namespace
+        #string $rest_base
+        --
+        +register_routes()
+        +get_items(WP_REST_Request $request)
+        +get_item(WP_REST_Request $request)
+        +create_item(WP_REST_Request $request)
+        +update_item(WP_REST_Request $request)
+        +delete_item(WP_REST_Request $request)
+        +get_items_permissions_check(WP_REST_Request $request)
+        +get_item_permissions_check(WP_REST_Request $request)
+        +create_item_permissions_check(WP_REST_Request $request)
+        +update_item_permissions_check(WP_REST_Request $request)
+        +delete_item_permissions_check(WP_REST_Request $request)
+        +prepare_item_for_response(mixed $item, WP_REST_Request $request)
+        #prepare_item_for_database(WP_REST_Request $request)
+        +get_collection_params(): array
+        +get_item_schema(): array
+        #add_additional_fields_to_object(array $object, WP_REST_Request $request): array
+        #update_additional_fields_for_object(array $object, WP_REST_Request $request)
+        #add_additional_fields_schema(array $schema): array
+    }
+}
+
+package "Endpoint Controllers" {
+    class WP_REST_Posts_Controller extends WP_REST_Controller {
+        #string $post_type
+        #WP_Post_Type $post_type_obj
+        #int $allow_batch
+        --
+        +register_routes()
+        +get_items(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +get_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +create_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +update_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +delete_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+        #prepare_links(WP_Post $post): array
+        #prepare_item_for_database(WP_REST_Request $request): stdClass|WP_Error
+        +get_item_schema(): array
+    }
+
+    class WP_REST_Users_Controller extends WP_REST_Controller {
+        --
+        +register_routes()
+        +get_items(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +get_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +create_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +update_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +delete_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +get_current_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+    }
+
+    class WP_REST_Comments_Controller extends WP_REST_Controller {
+        --
+        +register_routes()
+        +get_items(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +get_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +create_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +update_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +delete_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+        #prepare_links(WP_Comment $comment): array
+    }
+
+    class WP_REST_Terms_Controller extends WP_REST_Controller {
+        #string $taxonomy
+        #WP_Taxonomy $taxonomy_obj
+        --
+        +register_routes()
+        +get_items(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +get_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +create_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +update_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +delete_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+    }
+
+    class WP_REST_Taxonomies_Controller extends WP_REST_Controller {
+        --
+        +register_routes()
+        +get_items(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +get_item(WP_REST_Request $request): WP_REST_Response|WP_Error
+        +get_item_schema(): array
+    }
+
+    class WP_REST_Blocks_Controller extends WP_REST_Posts_Controller {
+        --
+        +register_routes()
+        +get_items(WP_REST_Request $request): WP_REST_Response|WP_Error
+    }
+}
+
+' Relationships
+WP_REST_Server --> WP_REST_Request : creates
+WP_REST_Server --> WP_REST_Response : returns
+WP_REST_Server --> WP_REST_Controller : dispatches to
+
+WP_REST_Controller <|-- WP_REST_Posts_Controller
+WP_REST_Controller <|-- WP_REST_Users_Controller
+WP_REST_Controller <|-- WP_REST_Comments_Controller
+WP_REST_Controller <|-- WP_REST_Terms_Controller
+WP_REST_Controller <|-- WP_REST_Taxonomies_Controller
+WP_REST_Posts_Controller <|-- WP_REST_Blocks_Controller
+
+note right of WP_REST_Server
+  Singleton accessed via
+  rest_get_server()
+end note
+
+note bottom of WP_REST_Controller
+  Abstract base class.
+  All endpoint controllers
+  extend this class.
+end note
+
+@enduml

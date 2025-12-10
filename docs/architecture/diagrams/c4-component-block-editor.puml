@@ -1,0 +1,45 @@
+@startuml c4-component-block-editor
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title WordPress Block Editor Components
+
+Container_Boundary(block_system, "Block System") {
+    Component(block_type_registry, "WP_Block_Type_Registry", "PHP Singleton", "Central registry for all registered block types")
+    Component(block_type, "WP_Block_Type", "PHP Class", "Block type definition with attributes, supports, render callback")
+    Component(block, "WP_Block", "PHP Class", "Block instance with context and inner blocks")
+    Component(block_list, "WP_Block_List", "PHP Class", "Iterable collection of blocks")
+}
+
+Container_Boundary(parsing, "Block Parsing") {
+    Component(block_parser, "WP_Block_Parser", "PHP Class", "Tokenizes post content into block structures")
+    Component(block_parser_block, "WP_Block_Parser_Block", "PHP Class", "Parsed block data structure")
+    Component(block_parser_frame, "WP_Block_Parser_Frame", "PHP Class", "Parser state management")
+}
+
+Container_Boundary(patterns, "Block Patterns") {
+    Component(patterns_registry, "WP_Block_Patterns_Registry", "PHP Singleton", "Registry for reusable block patterns")
+    Component(pattern_categories, "WP_Block_Pattern_Categories_Registry", "PHP Singleton", "Pattern category management")
+}
+
+Container_Boundary(styles, "Block Styles") {
+    Component(styles_registry, "WP_Block_Styles_Registry", "PHP Singleton", "Custom block style variations")
+    Component(block_supports, "WP_Block_Supports", "PHP Class", "Block feature support (colors, spacing, etc.)")
+}
+
+ContainerDb(post_content, "Post Content", "HTML + Block Comments")
+
+Rel(post_content, block_parser, "Input")
+Rel(block_parser, block_parser_block, "Produces")
+Rel(block_parser_block, block, "Converted to")
+Rel(block, block_list, "Contained in")
+
+Rel(block, block_type_registry, "Looks up type")
+Rel(block_type_registry, block_type, "Contains")
+
+Rel(block, block_supports, "Applies")
+
+Rel(patterns_registry, block_parser, "Provides patterns")
+
+@enduml

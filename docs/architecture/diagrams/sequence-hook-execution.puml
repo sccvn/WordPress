@@ -1,0 +1,100 @@
+@startuml sequence-hook-execution
+!pragma teoz true
+
+title WordPress Hook System Execution Flow
+
+participant "Plugin/Theme" as plugin
+participant "Plugin API" as api
+participant "$wp_filter" as filter
+participant "WP_Hook" as hook
+participant "Callback 1" as cb1
+participant "Callback 2" as cb2
+participant "Callback 3" as cb3
+
+== Registration Phase ==
+
+plugin -> api: add_filter('the_content', 'cb1', 10, 1)
+activate api
+api -> filter: Get or create WP_Hook for 'the_content'
+api -> hook: add_filter('cb1', 10, 1)
+activate hook
+hook -> hook: Store in $callbacks[10][id1]
+hook --> api: 
+deactivate hook
+api --> plugin: true
+deactivate api
+
+plugin -> api: add_filter('the_content', 'cb2', 5, 1)
+activate api
+api -> hook: add_filter('cb2', 5, 1)
+activate hook
+hook -> hook: Store in $callbacks[5][id2]
+note over hook: Priority 5 = earlier execution
+hook --> api: 
+deactivate hook
+api --> plugin: true
+deactivate api
+
+plugin -> api: add_filter('the_content', 'cb3', 15, 1)
+activate api
+api -> hook: add_filter('cb3', 15, 1)
+activate hook
+hook -> hook: Store in $callbacks[15][id3]
+note over hook: Priority 15 = later execution
+hook --> api: 
+deactivate hook
+api --> plugin: true
+deactivate api
+
+== Execution Phase ==
+
+plugin -> api: apply_filters('the_content', $content)
+activate api
+
+api -> filter: Get WP_Hook for 'the_content'
+api -> hook: apply_filters($content, $args)
+activate hook
+
+hook -> hook: Sort callbacks by priority
+note over hook: Execution order: cb2(5) → cb1(10) → cb3(15)
+
+hook -> hook: $nesting_level++
+
+loop For each priority in sorted order
+    hook -> cb2: call_user_func_array($callback, [$value])
+    activate cb2
+    note over cb2: Priority 5
+    cb2 --> hook: $modified_value
+    deactivate cb2
+    
+    hook -> cb1: call_user_func_array($callback, [$value])
+    activate cb1
+    note over cb1: Priority 10
+    cb1 --> hook: $modified_value
+    deactivate cb1
+    
+    hook -> cb3: call_user_func_array($callback, [$value])
+    activate cb3
+    note over cb3: Priority 15
+    cb3 --> hook: $modified_value
+    deactivate cb3
+end
+
+hook -> hook: $nesting_level--
+hook --> api: $final_value
+deactivate hook
+
+api --> plugin: $final_value
+deactivate api
+
+== Nested Hook Execution ==
+
+note over plugin, cb3
+    If a callback triggers another apply_filters():
+    - $nesting_level increases
+    - Separate iteration tracking
+    - Prevents infinite loops
+    - Supports recursive hooks
+end note
+
+@enduml

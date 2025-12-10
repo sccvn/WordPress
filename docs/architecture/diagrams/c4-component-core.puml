@@ -1,0 +1,46 @@
+@startuml c4-component-core
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title WordPress Core Components
+
+Container_Boundary(core, "WordPress Core") {
+    Component(wp_class, "WP", "PHP Class", "Main request handler - parses requests, sets query vars, orchestrates response")
+    Component(wp_query, "WP_Query", "PHP Class", "Content query builder and executor - The Loop")
+    Component(wpdb, "wpdb", "PHP Class", "Database abstraction layer - SQL execution and sanitization")
+    Component(wp_hook, "WP_Hook", "PHP Class", "Observer pattern - Actions and Filters system")
+    Component(wp_rewrite, "WP_Rewrite", "PHP Class", "URL rewriting - Pretty permalinks")
+    Component(wp_roles, "WP_Roles", "PHP Class", "Role and capability management")
+}
+
+Container_Boundary(entities, "WordPress Entities") {
+    Component(wp_post, "WP_Post", "PHP Class", "Post/page/CPT data object")
+    Component(wp_user, "WP_User", "PHP Class", "User data object with capabilities")
+    Component(wp_term, "WP_Term", "PHP Class", "Taxonomy term data object")
+    Component(wp_comment, "WP_Comment", "PHP Class", "Comment data object")
+}
+
+Container_Boundary(queries, "Query Subsystem") {
+    Component(wp_tax_query, "WP_Tax_Query", "PHP Class", "Taxonomy filtering")
+    Component(wp_meta_query, "WP_Meta_Query", "PHP Class", "Metadata filtering")
+    Component(wp_date_query, "WP_Date_Query", "PHP Class", "Date-based filtering")
+}
+
+ContainerDb(database, "Database", "MySQL")
+
+Rel(wp_class, wp_query, "Creates/uses")
+Rel(wp_class, wp_rewrite, "Uses")
+Rel(wp_class, wp_hook, "Fires hooks")
+
+Rel(wp_query, wpdb, "Executes queries")
+Rel(wp_query, wp_tax_query, "Uses")
+Rel(wp_query, wp_meta_query, "Uses")
+Rel(wp_query, wp_date_query, "Uses")
+Rel(wp_query, wp_post, "Returns")
+
+Rel(wpdb, database, "SQL queries")
+
+Rel(wp_user, wp_roles, "Checks capabilities")
+
+@enduml

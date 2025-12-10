@@ -1,0 +1,167 @@
+@startuml erd-core-tables
+!define table(x) entity x << (T,#FFAAAA) >>
+!define pk(x) <&key> x
+!define fk(x) <&link-intact> x
+
+title WordPress Core Database Schema (ERD)
+
+package "Content Tables" {
+    table(wp_posts) {
+        pk(ID) : bigint(20)
+        fk(post_author) : bigint(20)
+        post_date : datetime
+        post_date_gmt : datetime
+        post_content : longtext
+        post_title : text
+        post_excerpt : text
+        post_status : varchar(20)
+        comment_status : varchar(20)
+        ping_status : varchar(20)
+        post_password : varchar(255)
+        post_name : varchar(200)
+        to_ping : text
+        pinged : text
+        post_modified : datetime
+        post_modified_gmt : datetime
+        post_content_filtered : longtext
+        fk(post_parent) : bigint(20)
+        guid : varchar(255)
+        menu_order : int(11)
+        post_type : varchar(20)
+        post_mime_type : varchar(100)
+        comment_count : bigint(20)
+    }
+
+    table(wp_postmeta) {
+        pk(meta_id) : bigint(20)
+        fk(post_id) : bigint(20)
+        meta_key : varchar(255)
+        meta_value : longtext
+    }
+
+    table(wp_comments) {
+        pk(comment_ID) : bigint(20)
+        fk(comment_post_ID) : bigint(20)
+        comment_author : tinytext
+        comment_author_email : varchar(100)
+        comment_author_url : varchar(200)
+        comment_author_IP : varchar(100)
+        comment_date : datetime
+        comment_date_gmt : datetime
+        comment_content : text
+        comment_karma : int(11)
+        comment_approved : varchar(20)
+        comment_agent : varchar(255)
+        comment_type : varchar(20)
+        fk(comment_parent) : bigint(20)
+        fk(user_id) : bigint(20)
+    }
+
+    table(wp_commentmeta) {
+        pk(meta_id) : bigint(20)
+        fk(comment_id) : bigint(20)
+        meta_key : varchar(255)
+        meta_value : longtext
+    }
+}
+
+package "User Tables" {
+    table(wp_users) {
+        pk(ID) : bigint(20)
+        user_login : varchar(60)
+        user_pass : varchar(255)
+        user_nicename : varchar(50)
+        user_email : varchar(100)
+        user_url : varchar(100)
+        user_registered : datetime
+        user_activation_key : varchar(255)
+        user_status : int(11)
+        display_name : varchar(250)
+    }
+
+    table(wp_usermeta) {
+        pk(umeta_id) : bigint(20)
+        fk(user_id) : bigint(20)
+        meta_key : varchar(255)
+        meta_value : longtext
+    }
+}
+
+package "Taxonomy Tables" {
+    table(wp_terms) {
+        pk(term_id) : bigint(20)
+        name : varchar(200)
+        slug : varchar(200)
+        term_group : bigint(10)
+    }
+
+    table(wp_term_taxonomy) {
+        pk(term_taxonomy_id) : bigint(20)
+        fk(term_id) : bigint(20)
+        taxonomy : varchar(32)
+        description : longtext
+        fk(parent) : bigint(20)
+        count : bigint(20)
+    }
+
+    table(wp_term_relationships) {
+        pk(object_id) : bigint(20)
+        pk(term_taxonomy_id) : bigint(20)
+        term_order : int(11)
+    }
+
+    table(wp_termmeta) {
+        pk(meta_id) : bigint(20)
+        fk(term_id) : bigint(20)
+        meta_key : varchar(255)
+        meta_value : longtext
+    }
+}
+
+package "Site Configuration" {
+    table(wp_options) {
+        pk(option_id) : bigint(20)
+        option_name : varchar(191)
+        option_value : longtext
+        autoload : varchar(20)
+    }
+
+    table(wp_links) {
+        pk(link_id) : bigint(20)
+        link_url : varchar(255)
+        link_name : varchar(255)
+        link_image : varchar(255)
+        link_target : varchar(25)
+        link_description : varchar(255)
+        link_visible : varchar(20)
+        fk(link_owner) : bigint(20)
+        link_rating : int(11)
+        link_updated : datetime
+        link_rel : varchar(255)
+        link_notes : mediumtext
+        link_rss : varchar(255)
+    }
+}
+
+' Relationships
+wp_posts ||--o{ wp_postmeta : "has"
+wp_posts ||--o{ wp_comments : "has"
+wp_posts }o--|| wp_users : "authored by"
+wp_posts }o--o| wp_posts : "parent"
+
+wp_comments ||--o{ wp_commentmeta : "has"
+wp_comments }o--|| wp_posts : "belongs to"
+wp_comments }o--o| wp_comments : "parent"
+wp_comments }o--o| wp_users : "author"
+
+wp_users ||--o{ wp_usermeta : "has"
+
+wp_terms ||--|| wp_term_taxonomy : "classified by"
+wp_term_taxonomy ||--o{ wp_term_relationships : "links"
+wp_term_relationships }o--|| wp_posts : "categorizes"
+wp_terms ||--o{ wp_termmeta : "has"
+wp_term_taxonomy }o--o| wp_term_taxonomy : "parent"
+
+wp_links }o--|| wp_users : "owned by"
+
+@enduml
