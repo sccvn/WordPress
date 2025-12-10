@@ -1,0 +1,28 @@
+{
+    "git.ignoreLimitWarning": true,
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.compile.nullAnalysis.mode": "automatic",
+    "[javascript]": {
+      "editor.maxTokenizationLineLength": 2500,
+      //  Includes brackets behavior and also invokes special onEnterRules defined by languages.
+      "editor.autoIndent": "advanced",
+      // Automatically format code while typing (e.g., after typing `;` or `}` in JS)
+      "editor.formatOnType": true,
+      // Automatically format pasted code using the active formatter
+      "editor.formatOnPaste": true,
+      // Automatically format saved code using the active formatter
+      "editor.formatOnSave": true,
+      // Set the number of spaces per indentation level (affects behavior when using spaces)
+      "editor.indentSize": 2,
+      // Set the visible tab size (for alignment and indentation visualization)
+      "editor.tabSize": 2,
+      "editor.detectIndentation": true,
+    },
+    "editor.tabSize": 2,
+    "editor.autoIndentOnPaste": true,
+    "editor.indentSize": 2,
+    "editor.detectIndentation": true,
+    "markdown-preview-enhanced.plantumlServer": "https://www.plantuml.com/plantuml/svg/",
+    //"markdown-preview-enhanced.plantumlServer": "https://kroki.io/plantuml/svg/",
+    // "markdown-preview-enhanced.plantumlJarPath": "/home/tuanna47/workspaces/SOLUTION_TENDER/plantuml.jar"
+}
